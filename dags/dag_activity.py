@@ -8,7 +8,7 @@ def show_message():
     print("The task executed successfully")
 
 with DAG(
-    dag_id="firt_dag_example",
+    dag_id="first_dag_example",
     start_date= datetime(2026,1,1),
     schedule=None,
     catchup=False,
