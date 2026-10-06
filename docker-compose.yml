@@ -1,0 +1,57 @@
+services:
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow123
+      POSTGRES_DB: airflow_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  airflow-webserver:
+    build: .
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow123@postgres/airflow_db
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__API__SECRET_KEY: ${AIRFLOW_SECRET_KEY}
+      AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+    command: airflow api-server
+
+  airflow-scheduler:
+    build: .
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow123@postgres/airflow_db
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-webserver:8080/execution/
+      AIRFLOW__API__SECRET_KEY: ${AIRFLOW_SECRET_KEY}
+      AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET}
+    volumes:
+      - ./dags:/opt/airflow/dags
+    command: airflow scheduler
+
+  airflow-dag-processor:
+    build: .
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow123@postgres/airflow_db
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__API__SECRET_KEY: ${AIRFLOW_SECRET_KEY}
+    volumes:
+      - ./dags:/opt/airflow/dags
+    command: airflow dag-processor
+
+volumes:
+  postgres_data:
